@@ -1,0 +1,39 @@
+<?php
+use Ratchet\MessageComponentInterface;
+use Ratchet\ConnectionInterface;
+
+require __DIR__ . '/vendor/autoload.php'; // Path to your autoloader
+
+class MyWebSocketServer implements MessageComponentInterface {
+    public function onOpen(ConnectionInterface $conn) {
+        // Handle new connections
+        echo "New connection! ({$conn->resourceId})\n";
+    }
+
+    public function onClose(ConnectionInterface $conn) {
+        // Handle closed connections
+        echo "Connection {$conn->resourceId} has disconnected\n";
+    }
+
+    public function onError(ConnectionInterface $conn, \Exception $e) {
+        // Handle errors
+        echo "An error has occurred: {$e->getMessage()}\n";
+        $conn->close();
+    }
+
+    public function onMessage(ConnectionInterface $from, $msg) {
+        // Handle incoming messages
+        echo "Message received: {$msg}\n";
+        $from->send("Received your message: {$msg}");
+    }
+}
+
+$server = new \Ratchet\WebSocket\WsServer(new MyWebSocketServer());
+$loop = React\EventLoop\Factory::create();
+$socket = new React\Socket\Server('0.0.0.0:8080', $loop);
+
+$server = new Ratchet\Server\IoServer($server, $socket, $loop);
+echo "Server started...\n";
+
+$server->run();
+?>
